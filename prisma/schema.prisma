@@ -1,0 +1,82 @@
+// This is your Prisma schema file — matches your existing DB exactly.
+// Run: npx prisma migrate dev --name init
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Category {
+  id        String   @id @default(uuid())
+  name      String
+  createdAt DateTime @default(now())
+
+  products  Product[]
+}
+
+model Product {
+  id          String   @id @default(uuid())
+  name        String
+  description String?
+  categoryId  String
+  basePrice   Float?
+  createdAt   DateTime @default(now())
+
+  category    Category         @relation(fields: [categoryId], references: [id])
+  variants    ProductVariant[]
+  quoteItems  QuoteItem[]
+}
+
+model ProductVariant {
+  id         String   @id @default(uuid())
+  productId  String
+  color      String?
+  dimensions String?
+  stock      Int?
+  createdAt  DateTime @default(now())
+
+  product    Product   @relation(fields: [productId], references: [id])
+  quoteItems QuoteItem[]
+}
+
+model User {
+  id        String   @id @default(uuid())
+  name      String
+  email     String   @unique
+  phone     String
+  createdAt DateTime @default(now())
+
+  quotes    Quote[]
+}
+
+model Quote {
+  id        String   @id @default(uuid())
+  userId    String
+  eventName String?
+  eventType String?
+  location  String
+  startDate DateTime
+  endDate   DateTime
+  notes     String?
+  status    String   @default("PENDING")
+  createdAt DateTime @default(now())
+
+  user      User      @relation(fields: [userId], references: [id])
+  items     QuoteItem[]
+}
+
+model QuoteItem {
+  id        String   @id @default(uuid())
+  quoteId   String
+  productId String
+  variantId String?
+  quantity  Int
+
+  quote     Quote          @relation(fields: [quoteId], references: [id])
+  product   Product        @relation(fields: [productId], references: [id])
+  variant   ProductVariant? @relation(fields: [variantId], references: [id])
+}

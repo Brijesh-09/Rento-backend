@@ -1,0 +1,349 @@
+{
+  "info": {
+    "name": "Furniture Rental API",
+    "_postman_id": "furniture-rental-api",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    { "key": "base_url", "value": "http://localhost:4000/api" },
+    { "key": "category_id", "value": "" },
+    { "key": "product_id", "value": "" },
+    { "key": "variant_id", "value": "" },
+    { "key": "user_id", "value": "" },
+    { "key": "quote_id", "value": "" }
+  ],
+  "item": [
+    {
+      "name": "Health",
+      "item": [
+        {
+          "name": "Health Check",
+          "request": {
+            "method": "GET",
+            "url": "http://localhost:4000/health"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Categories",
+      "item": [
+        {
+          "name": "Get all categories",
+          "request": {
+            "method": "GET",
+            "url": "{{base_url}}/categories"
+          }
+        },
+        {
+          "name": "Get category by ID",
+          "request": {
+            "method": "GET",
+            "url": "{{base_url}}/categories/{{category_id}}"
+          }
+        },
+        {
+          "name": "Create category",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "const res = pm.response.json();",
+                  "if (res.data && res.data.id) {",
+                  "  pm.collectionVariables.set('category_id', res.data.id);",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "url": "{{base_url}}/categories",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Seating\"\n}"
+            }
+          }
+        },
+        {
+          "name": "Update category",
+          "request": {
+            "method": "PATCH",
+            "url": "{{base_url}}/categories/{{category_id}}",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Seating & Sofas\"\n}"
+            }
+          }
+        },
+        {
+          "name": "Delete category",
+          "request": {
+            "method": "DELETE",
+            "url": "{{base_url}}/categories/{{category_id}}"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Products",
+      "item": [
+        {
+          "name": "Get all products",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{base_url}}/products?page=1&limit=20",
+              "host": ["{{base_url}}"],
+              "path": ["products"],
+              "query": [
+                { "key": "page",  "value": "1" },
+                { "key": "limit", "value": "20" },
+                { "key": "categoryId", "value": "", "disabled": true },
+                { "key": "search", "value": "", "disabled": true }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Get product by ID",
+          "request": {
+            "method": "GET",
+            "url": "{{base_url}}/products/{{product_id}}"
+          }
+        },
+        {
+          "name": "Create product",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "const res = pm.response.json();",
+                  "if (res.data && res.data.id) {",
+                  "  pm.collectionVariables.set('product_id', res.data.id);",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "url": "{{base_url}}/products",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Chiavari Chair\",\n  \"description\": \"Elegant banquet chair, stackable\",\n  \"categoryId\": \"{{category_id}}\",\n  \"basePrice\": 150\n}"
+            }
+          }
+        },
+        {
+          "name": "Update product",
+          "request": {
+            "method": "PATCH",
+            "url": "{{base_url}}/products/{{product_id}}",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"basePrice\": 175,\n  \"description\": \"Premium chiavari chair, gold or silver finish\"\n}"
+            }
+          }
+        },
+        {
+          "name": "Delete product",
+          "request": {
+            "method": "DELETE",
+            "url": "{{base_url}}/products/{{product_id}}"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Variants",
+      "item": [
+        {
+          "name": "Get all variants for product",
+          "request": {
+            "method": "GET",
+            "url": "{{base_url}}/products/{{product_id}}/variants"
+          }
+        },
+        {
+          "name": "Add variant to product",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "const res = pm.response.json();",
+                  "if (res.data && res.data.id) {",
+                  "  pm.collectionVariables.set('variant_id', res.data.id);",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "url": "{{base_url}}/products/{{product_id}}/variants",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"color\": \"Gold\",\n  \"dimensions\": \"45x45x90 cm\",\n  \"stock\": 50\n}"
+            }
+          }
+        },
+        {
+          "name": "Update variant",
+          "request": {
+            "method": "PATCH",
+            "url": "{{base_url}}/products/{{product_id}}/variants/{{variant_id}}",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"stock\": 75\n}"
+            }
+          }
+        },
+        {
+          "name": "Delete variant",
+          "request": {
+            "method": "DELETE",
+            "url": "{{base_url}}/products/{{product_id}}/variants/{{variant_id}}"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Users",
+      "item": [
+        {
+          "name": "Get all users",
+          "request": {
+            "method": "GET",
+            "url": "{{base_url}}/users"
+          }
+        },
+        {
+          "name": "Get user by ID",
+          "request": {
+            "method": "GET",
+            "url": "{{base_url}}/users/{{user_id}}"
+          }
+        },
+        {
+          "name": "Create user",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "const res = pm.response.json();",
+                  "if (res.data && res.data.id) {",
+                  "  pm.collectionVariables.set('user_id', res.data.id);",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "url": "{{base_url}}/users",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Rahul Mehta\",\n  \"email\": \"rahul@example.com\",\n  \"phone\": \"+919876543210\"\n}"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Quotes",
+      "item": [
+        {
+          "name": "Get all quotes",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{base_url}}/quotes?page=1&limit=20",
+              "host": ["{{base_url}}"],
+              "path": ["quotes"],
+              "query": [
+                { "key": "page",   "value": "1" },
+                { "key": "limit",  "value": "20" },
+                { "key": "status", "value": "PENDING", "disabled": true }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Get quote by ID",
+          "request": {
+            "method": "GET",
+            "url": "{{base_url}}/quotes/{{quote_id}}"
+          }
+        },
+        {
+          "name": "Submit quote (new user inline)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "const res = pm.response.json();",
+                  "if (res.data && res.data.id) {",
+                  "  pm.collectionVariables.set('quote_id', res.data.id);",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "url": "{{base_url}}/quotes",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"user\": {\n    \"name\": \"Priya Shah\",\n    \"email\": \"priya@example.com\",\n    \"phone\": \"+919876500000\"\n  },\n  \"eventName\": \"Annual Sales Conference\",\n  \"eventType\": \"CORPORATE\",\n  \"location\": \"Taj Lands End, Mumbai\",\n  \"startDate\": \"2025-02-10\",\n  \"endDate\": \"2025-02-12\",\n  \"notes\": \"Need delivery by 8am on day one\",\n  \"items\": [\n    {\n      \"productId\": \"{{product_id}}\",\n      \"variantId\": \"{{variant_id}}\",\n      \"quantity\": 100\n    }\n  ]\n}"
+            }
+          }
+        },
+        {
+          "name": "Submit quote (existing user)",
+          "request": {
+            "method": "POST",
+            "url": "{{base_url}}/quotes",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"userId\": \"{{user_id}}\",\n  \"eventName\": \"Wedding Reception\",\n  \"eventType\": \"WEDDING\",\n  \"location\": \"ITC Grand Central, Mumbai\",\n  \"startDate\": \"2025-03-15\",\n  \"endDate\": \"2025-03-15\",\n  \"notes\": \"Garden seating, white theme\",\n  \"items\": [\n    {\n      \"productId\": \"{{product_id}}\",\n      \"quantity\": 200\n    }\n  ]\n}"
+            }
+          }
+        },
+        {
+          "name": "Update quote status",
+          "request": {
+            "method": "PATCH",
+            "url": "{{base_url}}/quotes/{{quote_id}}/status",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"status\": \"REVIEWING\"\n}"
+            }
+          }
+        },
+        {
+          "name": "Delete quote (PENDING only)",
+          "request": {
+            "method": "DELETE",
+            "url": "{{base_url}}/quotes/{{quote_id}}"
+          }
+        }
+      ]
+    }
+  ]
+}

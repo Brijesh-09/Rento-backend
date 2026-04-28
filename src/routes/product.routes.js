@@ -9,6 +9,7 @@ const {
   UpdateVariantSchema,
 } = require("../validators");
 const { ok, created, notFound, serverError, badRequest } = require("../lib/response");
+const { deleteFromSpaces } = require("../lib/spaces");
 
 const router = Router();
 
@@ -17,29 +18,21 @@ const router = Router();
 // ─────────────────────────────────────────────────────────────────────────────
 
 // GET /api/products
-// ?categoryId=  ?search=  ?page=  ?limit=
 router.get("/", validate(ProductQuerySchema, "query"), async (req, res) => {
   try {
     const { categoryId, search, page, limit } = req.query;
-
     const where = {};
-
     if (categoryId) where.categoryId = categoryId;
-
     if (search) {
       where.OR = [
         { name:        { contains: search, mode: "insensitive" } },
         { description: { contains: search, mode: "insensitive" } },
       ];
     }
-
     const skip  = (page - 1) * limit;
     const total = await prisma.product.count({ where });
-
     const products = await prisma.product.findMany({
-      where,
-      skip,
-      take: limit,
+      where, skip, take: limit,
       orderBy: { createdAt: "desc" },
       include: {
         category: { select: { id: true, name: true } },
@@ -47,14 +40,8 @@ router.get("/", validate(ProductQuerySchema, "query"), async (req, res) => {
         _count:    { select: { variants: true } },
       },
     });
-
     return ok(res, products, {
-      pagination: {
-        total,
-        page,
-        limit,
-        totalPages: Math.ceil(total / limit),
-      },
+      pagination: { total, page, limit, totalPages: Math.ceil(total / limit) },
     });
   } catch (err) {
     return serverError(res, err);
@@ -66,10 +53,7 @@ router.get("/:id", async (req, res) => {
   try {
     const product = await prisma.product.findUnique({
       where: { id: req.params.id },
-      include: {
-        category: true,
-        variants: { orderBy: { createdAt: "asc" } },
-      },
+      include: { category: true, variants: { orderBy: { createdAt: "asc" } } },
     });
     if (!product) return notFound(res, "Product not found");
     return ok(res, product);
@@ -79,14 +63,11 @@ router.get("/:id", async (req, res) => {
 });
 
 // POST /api/products
+// imageUrls[] should already be uploaded via POST /api/upload first
 router.post("/", validate(CreateProductSchema), async (req, res) => {
   try {
-    // Verify category exists
-    const category = await prisma.category.findUnique({
-      where: { id: req.body.categoryId },
-    });
+    const category = await prisma.category.findUnique({ where: { id: req.body.categoryId } });
     if (!category) return notFound(res, "Category not found");
-
     const product = await prisma.product.create({
       data: req.body,
       include: { category: true, variants: true },
@@ -101,12 +82,9 @@ router.post("/", validate(CreateProductSchema), async (req, res) => {
 router.patch("/:id", validate(UpdateProductSchema), async (req, res) => {
   try {
     if (req.body.categoryId) {
-      const category = await prisma.category.findUnique({
-        where: { id: req.body.categoryId },
-      });
+      const category = await prisma.category.findUnique({ where: { id: req.body.categoryId } });
       if (!category) return notFound(res, "Category not found");
     }
-
     const product = await prisma.product.update({
       where: { id: req.params.id },
       data:  req.body,
@@ -120,10 +98,27 @@ router.patch("/:id", validate(UpdateProductSchema), async (req, res) => {
 });
 
 // DELETE /api/products/:id
+// Also cleans up all product + variant images from DO Spaces
 router.delete("/:id", async (req, res) => {
   try {
+    const product = await prisma.product.findUnique({
+      where:   { id: req.params.id },
+      include: { variants: true },
+    });
+    if (!product) return notFound(res, "Product not found");
+
+    const allImageUrls = [
+      ...(product.imageUrls ?? []),
+      ...product.variants.flatMap((v) => v.imageUrls ?? []),
+    ];
+
     await prisma.product.delete({ where: { id: req.params.id } });
-    return ok(res, { deleted: true });
+
+    if (allImageUrls.length > 0) {
+      Promise.allSettled(allImageUrls.map(deleteFromSpaces)).catch(() => {});
+    }
+
+    return ok(res, { deleted: true, imagesRemoved: allImageUrls.length });
   } catch (err) {
     if (err.code === "P2025") return notFound(res, "Product not found");
     return serverError(res, err);
@@ -131,20 +126,15 @@ router.delete("/:id", async (req, res) => {
 });
 
 // ─────────────────────────────────────────────────────────────────────────────
-// VARIANTS  /api/products/:productId/variants
+// VARIANTS
 // ─────────────────────────────────────────────────────────────────────────────
 
-// GET /api/products/:productId/variants
 router.get("/:productId/variants", async (req, res) => {
   try {
-    const product = await prisma.product.findUnique({
-      where: { id: req.params.productId },
-    });
+    const product = await prisma.product.findUnique({ where: { id: req.params.productId } });
     if (!product) return notFound(res, "Product not found");
-
     const variants = await prisma.productVariant.findMany({
-      where:   { productId: req.params.productId },
-      orderBy: { createdAt: "asc" },
+      where: { productId: req.params.productId }, orderBy: { createdAt: "asc" },
     });
     return ok(res, variants);
   } catch (err) {
@@ -152,14 +142,10 @@ router.get("/:productId/variants", async (req, res) => {
   }
 });
 
-// POST /api/products/:productId/variants
 router.post("/:productId/variants", validate(CreateVariantSchema), async (req, res) => {
   try {
-    const product = await prisma.product.findUnique({
-      where: { id: req.params.productId },
-    });
+    const product = await prisma.product.findUnique({ where: { id: req.params.productId } });
     if (!product) return notFound(res, "Product not found");
-
     const variant = await prisma.productVariant.create({
       data: { ...req.body, productId: req.params.productId },
     });
@@ -169,7 +155,6 @@ router.post("/:productId/variants", validate(CreateVariantSchema), async (req, r
   }
 });
 
-// PATCH /api/products/:productId/variants/:variantId
 router.patch("/:productId/variants/:variantId", validate(UpdateVariantSchema), async (req, res) => {
   try {
     const variant = await prisma.productVariant.update({
@@ -183,10 +168,14 @@ router.patch("/:productId/variants/:variantId", validate(UpdateVariantSchema), a
   }
 });
 
-// DELETE /api/products/:productId/variants/:variantId
 router.delete("/:productId/variants/:variantId", async (req, res) => {
   try {
+    const variant = await prisma.productVariant.findUnique({ where: { id: req.params.variantId } });
+    if (!variant) return notFound(res, "Variant not found");
     await prisma.productVariant.delete({ where: { id: req.params.variantId } });
+    if (variant.imageUrls?.length > 0) {
+      Promise.allSettled(variant.imageUrls.map(deleteFromSpaces)).catch(() => {});
+    }
     return ok(res, { deleted: true });
   } catch (err) {
     if (err.code === "P2025") return notFound(res, "Variant not found");

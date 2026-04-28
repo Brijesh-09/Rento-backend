@@ -7,6 +7,7 @@ const productRoutes  = require("./routes/product.routes");
 const userRoutes     = require("./routes/user.routes");
 const quoteRoutes    = require("./routes/quote.routes");
 const seedRoutes     = require("./routes/seed.routes");
+const uploadRoutes   = require("./routes/upload.routes");
 
 const app = express();
 
@@ -19,6 +20,7 @@ app.use("/api/products",   productRoutes);
 app.use("/api/users",      userRoutes);
 app.use("/api/quotes",     quoteRoutes);
 app.use("/api/seed",       seedRoutes);
+app.use("/api/upload",     uploadRoutes);
 
 app.get("/health", (_req, res) => res.json({ status: "ok" }));
 

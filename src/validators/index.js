@@ -17,6 +17,7 @@ const CreateProductSchema = z.object({
   description: z.string().optional(),
   categoryId:  z.string().uuid("categoryId must be a valid UUID"),
   basePrice:   z.number().positive().optional(),
+  imageUrls:   z.array(z.string().url()).default([]),
 });
 
 const UpdateProductSchema = z.object({
@@ -24,6 +25,7 @@ const UpdateProductSchema = z.object({
   description: z.string().optional(),
   categoryId:  z.string().uuid().optional(),
   basePrice:   z.number().positive().optional(),
+  imageUrls:   z.array(z.string().url()).optional(),
 });
 
 const ProductQuerySchema = z.object({
@@ -37,8 +39,9 @@ const ProductQuerySchema = z.object({
 
 const CreateVariantSchema = z.object({
   color:      z.string().min(1).optional(),
-  dimensions: z.string().min(1).optional(),  // e.g. "120x60x75 cm"
+  dimensions: z.string().min(1).optional(),
   stock:      z.number().int().min(0).optional(),
+  imageUrls:  z.array(z.string().url()).default([]),
 });
 
 const UpdateVariantSchema = CreateVariantSchema.partial();
